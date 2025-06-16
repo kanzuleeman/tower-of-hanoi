@@ -1,0 +1,44 @@
+  body {
+      background-color: #f8f9fa;
+    }
+
+    .tower {
+      width: 10px;
+      height: 250px;
+      background-color: black;
+      margin-top: 90px;
+      margin-left: 150px;
+      position: relative;
+      border-radius: 5px;
+    }
+
+    .base {
+      width: 250px;
+      height: 10px;
+      background-color: black;
+      margin-left: 25px;
+      border-radius: 5px;
+    }
+
+    .disk {
+      height: 20px;
+      border-radius: 6px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: grab;
+      transition: bottom 0.3s ease;
+    }
+
+    .highlight {
+      outline: 3px dashed green;
+      outline-offset: 5px;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    .tower-col {
+      min-height: 280px;
+    }
