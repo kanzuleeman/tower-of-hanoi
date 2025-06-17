@@ -1,136 +1,141 @@
-const diskStyles = [
-    { width: 140, class: 'disk1', color: '#FF6633' },
-    { width: 125, class: 'disk2', color: '#FFB399' },
-    { width: 110, class: 'disk3', color: '#FF33FF' },
-    { width: 95,  class: 'disk4', color: '#FFFF99' },
-    { width: 80,  class: 'disk5', color: '#00B3E6' },
-    { width: 65,  class: 'disk6', color: '#E6B333' },
-    { width: 50,  class: 'disk7', color: '#3366E6' },
-    { width: 35,  class: 'disk8', color: '#B34D4D' }
-  ];
+let draggedDisk = null;
+let moveCount = 0;
 
-  let draggedDisk = null;
-  let moveCount = 0;
+function getTotalDisks() {
+  return parseInt($('#diskCount').val());
+}
 
-  function getTotalDisks() {
-    return parseInt($('#diskCount').val());
-  }
+function getOptimalMoves() {
+  return Math.pow(2, getTotalDisks()) - 1;
+}
 
-  function getOptimalMoves() {
-    return Math.pow(2, getTotalDisks()) - 1;
-  }
+function updateDraggable() {
+  $('.disk').attr('draggable', false);
+  $('.tower').each(function () {
+    const topDisk = $(this).find('.disk').last();
+    if (topDisk.length) {
+      topDisk.attr('draggable', true);
+    }
+  });
+}
 
-  function updateDraggable() {
-    $('.disk').attr('draggable', false);
-    $('.tower').each(function () {
-      const disks = $(this).find('.disk');
-      if (disks.length > 0) {
-        disks.last().attr('draggable', true);
-      }
-    });
-  }
 
-  function repositionDisks(tower) {
-    const disks = tower.find('.disk');
-    disks.each(function (i) {
-      $(this).css('bottom', `${i * 22}px`);
-    });
-  }
+function repositionDisks(tower) {
+  tower.find('.disk').each((index, disk) => {
+    $(disk).css('bottom', `${index * 22}px`);
+  });
+}
 
-  function updateMoveCounter() {
-    $('#moveCounter').text(moveCount);
-  }
 
-  function checkWinCondition() {
-    const total = getTotalDisks();
-    const tower3Disks = $('#tower3').find('.disk').length;
+function updateMoveCounter() {
+  $('#moveCounter').text(moveCount);
+}
 
-    if (tower3Disks === total) {
+function checkWinCondition() {
+  const totalDisks = getTotalDisks();
+  const optimalMoves = getOptimalMoves();
+
+  ['#tower1', '#tower2', '#tower3'].forEach(towerSelector => {
+    if ($(towerSelector).find('.disk').length === totalDisks) {
       setTimeout(() => {
-        const optimal = getOptimalMoves();
-        if (moveCount === optimal) {
-          alert(`🎉 Perfect! You solved it in the optimal ${moveCount} moves!`);
-        } else {
-          alert(`🎉 You won in ${moveCount} moves!\nOptimal: ${optimal} moves.`);
-        }
+        const message = (moveCount === optimalMoves)
+          ? `🎉 Perfect! You solved it in the optimal ${moveCount} moves!`
+          : `🎉 You won in ${moveCount} moves!\nOptimal: ${optimalMoves} moves.`;
+        alert(message);
       }, 200);
     }
+  });
+}
+
+
+function generateDisks(count) {
+  const tower1 = $('#tower1');
+  tower1.empty();
+  $('#tower2, #tower3').empty();
+
+  const minWidth = 40;
+  const maxWidth = 150;
+  const step = (maxWidth - minWidth) / (count - 1);
+  const widths = [];
+
+  for (let i = 0; i < count; i++) {
+    widths.push(maxWidth - i * step);
   }
 
-  function generateDisks(count) {
-    const tower1 = $('#tower1');
-    tower1.empty();
-    $('#tower2, #tower3').empty();
+  widths.sort((a, b) => b - a);
 
-    for (let i = 0; i < count; i++) {
-      const disk = $('<div></div>')
-        .addClass('disk')
-        .addClass(diskStyles[i].class)
-        .css({
-          width: diskStyles[i].width + 'px',
-          backgroundColor: diskStyles[i].color,
-          bottom: `${i * 22}px`
-        });
+  widths.forEach((width, i) => {
+    const color = getRandomColor();
+    const disk = $('<div></div>')
+      .addClass('disk')
+      .css({
+        width: `${width}px`,
+        backgroundColor: color,
+        bottom: `${i * 22}px`,
+        textAlign: 'center',
+        lineHeight: '20px',
+        color: 'black'
+      })
+      .text(count - i);
 
-      tower1.append(disk);
-    }
+    tower1.append(disk);
+  });
 
-    moveCount = 0;
-    updateMoveCounter();
-    updateDraggable();
-  }
+  moveCount = 0;
+  updateMoveCounter();
+  updateDraggable();
+}
 
-  function resetGame() {
-    generateDisks(getTotalDisks());
-  }
 
-  $(document).ready(function () {
-    generateDisks(getTotalDisks());
+function getRandomColor() {
+  return '#' + Array.from({ length: 6 }, () =>
+    '0123456789ABCDEF'[Math.floor(Math.random() * 16)]
+  ).join('');
+}
+function resetGame() {
+  generateDisks(getTotalDisks());
+}
 
-    $('#diskCount').on('change', function () {
-      resetGame();
-    });
 
-    $(document).on('dragstart', '.disk', function () {
-      draggedDisk = $(this);
-    });
 
-    $('.tower').on('dragover', function (e) {
-      e.preventDefault();
-      $(this).addClass('highlight');
-    });
+$(document).ready(function () {
+  generateDisks(getTotalDisks());
 
-    $('.tower').on('dragleave', function () {
-      $(this).removeClass('highlight');
-    });
+  $('#diskCount').on('change', resetGame);
+  $('#resetBtn').on('click', resetGame);
 
-    $('.tower').on('drop', function (e) {
-      e.preventDefault();
-      $(this).removeClass('highlight');
+  $(document).on('dragstart', '.disk', function () {
+    draggedDisk = $(this);
+  });
 
-      const targetTower = $(this);
-      if (!draggedDisk) return;
+  $('.tower').on('dragover', function (e) {
+    e.preventDefault();
 
-      const targetDisks = targetTower.find('.disk');
-      const draggedWidth = draggedDisk.outerWidth();
-      const topDiskWidth = targetDisks.length > 0 ? targetDisks.last().outerWidth() : Infinity;
+    if (!draggedDisk) return;
 
-      if (draggedWidth < topDiskWidth) {
-        draggedDisk.detach().appendTo(targetTower);
-        repositionDisks(targetTower);
-        repositionDisks(draggedDisk.closest('.tower'));
-        updateDraggable();
-        moveCount++;
-        updateMoveCounter();
-        checkWinCondition();
-      } else {
-        alert("❌ Invalid move! You can't place a larger disk on a smaller one.");
-      }
+    const targetTower = $(this);
+    const targetDisks = targetTower.find('.disk');
+    const draggedWidth = draggedDisk.outerWidth();
+    const topDiskWidth = targetDisks.last().outerWidth() || Infinity;
+
+    if (draggedWidth < topDiskWidth) {
+      const originTower = draggedDisk.closest('.tower');
+
+      draggedDisk.detach().appendTo(targetTower);
+
+      repositionDisks(originTower);
+      repositionDisks(targetTower);
+
+      moveCount++;
+      updateMoveCounter();
+      updateDraggable();
+      checkWinCondition();
 
       draggedDisk = null;
-    });
-
-    $('#resetBtn').on('click', function () {
-      resetGame();
-    });
+    }
   });
+
+  $('.tower').on('dragleave', function () {
+    $(this).removeClass('highlight');
+  });
+});
